@@ -2289,6 +2289,16 @@ impl Type {
             Type::None => Some(false),
             Type::Sentinel(_) => Some(true),
             Type::Tuple(Tuple::Concrete(elements)) => Some(!elements.is_empty()),
+            // A builtin container whose element type (or, for `dict`, key type) is `Never`
+            // can hold no items, so it is always empty and therefore falsy.
+            Type::ClassType(cls)
+                if ["list", "set", "frozenset", "dict"]
+                    .iter()
+                    .any(|name| cls.is_builtin(name))
+                    && cls.targs().as_slice().first().is_some_and(Type::is_never) =>
+            {
+                Some(false)
+            }
             Type::Union(u) => {
                 let mut answer = None;
                 for option in &u.members {

@@ -4529,6 +4529,76 @@ def myfn(x: MyClass | None):
 );
 
 testcase!(
+    test_never_container,
+    r#"
+from typing import assert_type, Never
+
+def test_list(x: list[int] | list[Never]):
+    if x:
+        assert_type(x, list[int])
+    else:
+        assert_type(x, list[int] | list[Never])
+
+def test_dict(x: dict[str, object] | dict[Never, object]):
+    if x:
+        assert_type(x, dict[str, object])
+    else:
+        assert_type(x, dict[str, object] | dict[Never, object])
+
+def test_set(x: set[str] | set[Never]):
+    if x:
+        assert_type(x, set[str])
+    else:
+        assert_type(x, set[str] | set[Never])
+
+def test_frozenset(x: frozenset[str] | frozenset[Never]):
+    if x:
+        assert_type(x, frozenset[str])
+    else:
+        assert_type(x, frozenset[str] | frozenset[Never])
+    "#,
+);
+
+testcase!(
+    test_never_container_boolean_operators,
+    r#"
+from typing import Never, assert_type
+
+def f(a: list[int] | list[Never], default: list[str]):
+    assert_type(a or default, list[int] | list[str])
+    assert_type(not a, bool)
+    "#,
+);
+
+testcase!(
+    test_never_container_alone_is_falsy,
+    r#"
+from typing import Any, Never, assert_type
+
+def f(a: list[Never], b: list[Any], c: list[int]):
+    if a:
+        assert_type(a, Never)  # E: This code is unreachable
+    if b:
+        assert_type(b, list[Any])
+    if c:
+        assert_type(c, list[int])
+    assert_type([], list[Any])
+    "#,
+);
+
+testcase!(
+    test_never_container_folds_in_unions_and_not,
+    r#"
+from typing import Literal, Never, assert_type
+
+def f(a: list[Never], b: list[Never] | dict[Never, int], c: list[Never] | None):
+    assert_type(not a, Literal[True])
+    assert_type(not b, Literal[True])
+    assert_type(not c, Literal[True])
+    "#,
+);
+
+testcase!(
     test_attribute_lookup_on_intersection,
     r#"
 from typing import reveal_type
